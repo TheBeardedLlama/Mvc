@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.AspNetCore.Mvc.Internal;
+using Microsoft.AspNetCore.Mvc.Razor.Compilation;
 using Microsoft.AspNetCore.Mvc.Razor.Internal;
 using Microsoft.AspNetCore.Mvc.Razor.TagHelpers;
 using Microsoft.AspNetCore.Razor.Runtime.TagHelpers;
@@ -16,6 +17,55 @@ namespace Microsoft.AspNetCore.Mvc.Razor.Test.DependencyInjection
 {
     public class MvcRazorMvcCoreBuilderExtensionsTest
     {
+        [Fact]
+        public void AddRazorViewEngine_AddsMetadataReferenceFeatureProvider()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            var builder = services.AddMvcCore();
+
+            // Act
+            builder.AddRazorViewEngine();
+
+            // Assert
+            Assert.Single(builder.PartManager.FeatureProviders.OfType<MetadataReferenceFeatureProvider>());
+        }
+
+        [Fact]
+        public void AddRazorViewEngine_DoesNotAddMultipleMetadataReferenceFeatureProvider_OnMultipleInvocations()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            var builder = services.AddMvcCore();
+
+            // Act - 1
+            builder.AddRazorViewEngine();
+
+            // Act - 2
+            builder.AddRazorViewEngine();
+
+            // Assert
+            Assert.Single(builder.PartManager.FeatureProviders.OfType<MetadataReferenceFeatureProvider>());
+        }
+
+        [Fact]
+        public void AddRazorViewEngine_DoesNotReplaceExistingMetadataReferenceFeatureProvider()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            var builder = services.AddMvcCore();
+            var metadataReferenceFeatureProvider = new MetadataReferenceFeatureProvider();
+            builder.PartManager.FeatureProviders.Add(metadataReferenceFeatureProvider);
+
+            // Act
+            builder.AddRazorViewEngine();
+
+            // Assert
+            var actual = Assert.Single(
+                builder.PartManager.FeatureProviders.OfType<MetadataReferenceFeatureProvider>());
+            Assert.Same(metadataReferenceFeatureProvider, actual);
+        }
+
         [Fact]
         public void AddTagHelpersAsServices_ReplacesTagHelperActivatorAndTagHelperTypeResolver()
         {
